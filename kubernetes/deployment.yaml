@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django
+  labels:
+    app: django
+    env: dev
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django
+  template:
+    metadata:
+      labels:
+        app: django
+    spec:
+      containers:
+      - image: django_app:latest
+        imagePullPolicy: IfNotPresent
+        name: django-app
+        ports:
+        - containerPort: 80
+        env:
+        - name: DEBUG
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: debug
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: secret_key
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: database_url
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: django
+    env: dev
+    tier: backend
+  name: django-svc
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: django
