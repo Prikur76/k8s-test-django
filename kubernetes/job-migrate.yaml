@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: django
+    env: dev
+    tier: backend
+  name: django-migrate
+spec:
+  template:
+    spec:
+      containers:
+      - name: django-migrate
+        image: django_app:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: database_url
+        - name: DEBUG
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: debug
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: secret_key
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            secretKeyRef:
+              name: secret-stringdata
+              key: secret_key
+        command: ["python", "manage.py", "migrate", "--noinput"]
+      restartPolicy: Never

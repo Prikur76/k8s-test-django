@@ -262,6 +262,8 @@ kubectl apply -f ./kubernetes/deployment.yaml
 ```
 
 #### Настройка выполнения заданий Job/CronJob
+
+1. Создание задания с заданными параметрами запуска (CronJob).
 - добавьте новый файл манифеста, например *`cronjob-clearsessions.yaml`*, в разделе `.spec.schedule` которого укажите периодичность запуска. Для настройки можно воспользоваться [инструкцией](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/).
 - создайте CronJob из файла *`cronjob-clearsessions.yaml`* с помощью команды:
 ```bash
@@ -270,4 +272,15 @@ kubectl apply -f ./kubernetes/cronjob-clearsessions.yaml
 - для создания Job из существующего CronJob можно с помощью команды:
 ```bash
 kubectl create job --from=cronjob/<cronjob-name> <job-name> -n <namespace-name>
+```
+
+2. Создание задания, запускаемого вручную (Job).
+- добавьте новый файл манифеста, например *`job-migrate.yaml`*, в разделе `.spec.template.spec.containers.env` укажите ссылку на секрет.
+- создайте Job из файла *`job-migrate.yaml`* с помощью команды:
+```bash
+kubectl apply -f ./kubernetes/job-migrate.yaml
+```
+- проверьте выполнение задания с помощью команды:
+```bash
+kubectl get logs <pod-name>
 ```
