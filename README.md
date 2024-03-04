@@ -156,6 +156,7 @@ kubectl get pod django -o yaml > ./kubernetes/pod.yaml
 ```
 
 ### Развертывание 
+#### Общие инструкции для развертывания
 - поместите в файл deployment.yaml инструкции для создания Deployment, Service, Pod, 
 разделив их между собой пустой строкой и символами "--".
 - запускаем создание объектов из файла deployment.yaml
@@ -164,3 +165,42 @@ kubectl apply -f ./kubernetes/deployment.yaml
 ```
 - при необходимости - меняем настройки внутри файла `deployment.yaml` и 
 повторно запускаем создание объектов из него.
+
+#### Использование секретов для переменных окружения
+- Создание файла вручную:
+1. создайте секрет с помощью команды:
+```bash
+```bash
+kubectl create secret generic django-secret \
+  --from-literal=secret_key=<YOUR-SECRET-KEY> \
+  --from-literal=allowed_hosts=<YOUR-ALLOWED-HOSTS> \
+  --from-literal=debug=<DEBUG> \
+  --from-literal=database_url=postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>
+```
+```
+2. сохраните секрет в файл Secret.yaml
+```bash
+kubectl get secret django-secret -o yaml > ./kubernetes/Secret.yaml
+```
+Пример файла Secret.yaml приведен [тут](./kubernetes/Secret.example.yaml)
+
+- Создание секрета из файла:
+1. создайте манифест Secret.yaml и заполните его данными:
+```bash
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-stringdata
+  namespace: default
+type: Opaque
+stringData:  
+  secret_key: <YOUR-SECRET-KEY>
+  allowed_hosts: <YOUR-ALLOWED-HOSTS>
+  debug: <DEBUG>
+  database_url: postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>
+```
+2. запустите создание секрета с помощью команды:
+```bash
+kubectl apply -f ./kubernetes/Secret.yaml
+```
+3. добавьте Secret.yaml в .gitignore
