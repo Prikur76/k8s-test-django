@@ -10,7 +10,7 @@ spec:
   containers:
   - env:
     - name: DATABASE_URL
-      value: postgres://test_k8s:OwOtBep9Frut@192.168.0.246:5431/test_k8s
+      value: postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>
     image: django_app:latest
     imagePullPolicy: IfNotPresent
     name: django
