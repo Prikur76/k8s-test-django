@@ -8,8 +8,10 @@ metadata:
   name: cronjob-clearsessions
 spec:
   schedule: "0 1 * * *"
+  startingDeadlineSeconds: 15
   jobTemplate:
     spec:
+      ttlSecondsAfterFinished: 50
       template:
         metadata:
           labels:
