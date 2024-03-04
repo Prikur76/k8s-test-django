@@ -170,14 +170,13 @@ kubectl apply -f ./kubernetes/deployment.yaml
 - Создание файла вручную:
 1. создайте секрет с помощью команды:
 ```bash
-```bash
 kubectl create secret generic django-secret \
   --from-literal=secret_key=<YOUR-SECRET-KEY> \
   --from-literal=allowed_hosts=<YOUR-ALLOWED-HOSTS> \
   --from-literal=debug=<DEBUG> \
   --from-literal=database_url=postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>
 ```
-```
+
 2. сохраните секрет в файл Secret.yaml
 ```bash
 kubectl get secret django-secret -o yaml > ./kubernetes/Secret.yaml
@@ -204,3 +203,15 @@ stringData:
 kubectl apply -f ./kubernetes/Secret.yaml
 ```
 3. добавьте Secret.yaml в .gitignore
+
+4. В в раздел `.spec.template.spec.containers.env` файла deployment.yaml вместо переменных окружения укажите ссылку на секрет. 
+Например:
+```bash
+    env:
+    - name: DEBUG
+      valueFrom:
+        secretKeyRef:
+          name: secret-stringdata
+          key: debug  
+```
+
