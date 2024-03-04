@@ -223,7 +223,7 @@ kubectl delete -n default secret <secret-name>
 #### Настройка Ingress
 - проверяем подключения: *`minikube addons list`*
 - активируем дополнение: *`minikube addons enable ingress`*
-- проверяем: *`k get pods -n ingress-nginx`*
+- проверяем: *`kubectl get pods -n ingress-nginx`*
 
 Пример вывода:
 ```bash
@@ -261,3 +261,4 @@ spec:
 ```bash 
 kubectl apply -f ./kubernetes/deployment.yaml
 ```
+
