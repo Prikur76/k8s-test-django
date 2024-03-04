@@ -193,17 +193,17 @@ metadata:
   namespace: default
 type: Opaque
 stringData:  
-  secret_key: <YOUR-SECRET-KEY>
-  allowed_hosts: <YOUR-ALLOWED-HOSTS>
-  debug: <DEBUG>
-  database_url: postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>
+  secret_key: "<YOUR-SECRET-KEY>"
+  allowed_hosts: "<YOUR-ALLOWED-HOSTS>"
+  debug: "<DEBUG>"
+  database_url: "postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
 ```
 2. запустите создание секрета с помощью команды:
 ```bash
 kubectl apply -f ./kubernetes/Secret.yaml
 ```
 3. добавьте Secret.yaml в `.gitignore`
-4. В в раздел `.spec.template.spec.containers.env` файла deployment.yaml вместо переменных окружения укажите ссылку на секрет. 
+4. В раздел `.spec.template.spec.containers.env` файла deployment.yaml вместо переменных окружения укажите ссылку на секрет. 
 Например:
 ```bash
     env:
