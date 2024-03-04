@@ -74,3 +74,89 @@ $ docker compose build web
 `ALLOWED_HOSTS` -- настройка Django со списком разрешённых адресов. Если запрос прилетит на другой адрес, то сайт ответит ошибкой 400. Можно перечислить несколько адресов через запятую, например `127.0.0.1,192.168.0.1,site.test`. [Документация Django](https://docs.djangoproject.com/en/3.2/ref/settings/#allowed-hosts).
 
 `DATABASE_URL` -- адрес для подключения к базе данных PostgreSQL. Другие СУБД сайт не поддерживает. [Формат записи](https://github.com/jacobian/dj-database-url#url-schema).
+
+
+## Работа с локальным K8s кластером
+
+### Для начала:
+- скачать [VirtualBox](https://www.virtualbox.org/wiki/Downloads), [kubectl.exe](https://dl.k8s.io/release/v1.29.2/bin/windows/amd64/kubectl.exe), [minikube.exe](https://github.com/kubernetes/minikube/releases)
+- создать директорию Kubernetes, добавить ее в Path переменных окружения Windows (если работаете в среде Windows)
+- перенести файлы kubectl.exe, minikube.exe в директорию Kubernetes
+- запустить кластер Minikube
+
+### Команды для работы с кластером Minikube
+- `minikube version` -- выводит версию Minikube
+- `kubectl version` -- выводит версию kubectl
+
+- запускает кластер Minikube c драйвером Virtualbox:
+```bash 
+minikube start --driver=virtualbox --no-vtx-check=true
+``` 
+- `minikube stop` -- останавливает кластер Minikube
+- `minikube delete` -- удаляет кластер Minikube
+- `minikube ip` -- выводит IP адрес кластера Minikube
+- `minikube dashboard --url` -- запускает дашборд кластера Minikube и выводит URL 
+- `minikube image ls --format=table` -- выводит список образов в кластере Minikube в табличном виде
+
+### Команды для сборки образа с переменными окружения
+- собирает образ из Dockerfile, с переменными окружения:
+```bash
+minikube image build -t django_app . -f ./Dockerfile \
+   --build-env="SECRET_KEY=REPLACE_ME" \
+   --build-env="ALLOWED_HOSTS=['127.0.0.1','localhost','*']" \
+   --build-env="DATABASE_URL=postgres://test_k8s:OwOtBep9Frut@192.168.0.246:5432/test_k8s"
+``` 
+- `minikube image rm <Image ID>` -- удаляет образ с указанным ID
+- `minikube image prune -a` -- удаляет все неиспользуемые образы в кластере Minikube
+
+### Запуск образа приложение в режиме [терминала](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#run):
+```bash
+kubectl run django \
+--image=django_app:latest \
+--image-pull-policy=IfNotPresent \
+--env="DATABASE_URL=postgres://test_k8s:OwOtBep9Frut@192.168.0.246:5431/test_k8s"
+```
+`kubectl exec django -ti -- bash` -- вход в терминал POD django
+
+### Подключение к БД PostgreSQL
+- запуск БД Postgres в отдельном контейнере, перед которым проверьте включение Docker Desktop:
+```bash
+docker-compose -f docker-compose.override.yml up -d
+```
+- ввести вручную настройки для подключения к базе данных:
+```bash
+export DATABASE_URL="postgres://test_k8s:OwOtBep9Frut@<HOST IP>:5431/test_k8s"
+```
+- провести миграцию, создать суперпользователя и/или проверить соединение с БД:
+```
+./manage.py migrate
+
+./manage.py createsuperuser
+
+./manage.py shell
+
+>>> from django.contrib.auth.models import User
+>>> User.objects.all()
+```
+Пример вывода:
+```<QuerySet [<User: admin>]>```
+
+### Создание объектов из Манифестов
+- команда для создания объекта из Манифеста: ```kubectl apply -f <path-to-manifest>```
+
+Например, создаем POD с помощью Манифеста:
+```bash
+kubectl apply -f ./kubernetes/pod.yaml
+```
+- Для сохранения объекта (POD, Service, Deployment) в файл Манифеста используйте команду: 
+```bash
+kubectl get pod django -o yaml > ./kubernetes/pod.yaml
+```
+
+### Развертывание 
+- поместите в файл deployment.yaml инструкции для создания Deployment, Service, Pod, разделив их между собой пустой строкой и символами "--".
+- запускаем создание объектов из файла deployment.yaml
+```bash
+kubectl apply -f ./kubernetes/deployment.yaml
+```
+- при необходимости - меняем настройки и повторно запускаем создание объектов из файла deployment.yaml
