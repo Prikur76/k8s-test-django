@@ -102,10 +102,12 @@ minikube start --driver=virtualbox --no-vtx-check=true
 - собирает образ из Dockerfile, с переменными окружения:
 ```bash
 minikube image build -t django_app . -f ./Dockerfile \
-   --build-env="SECRET_KEY=REPLACE_ME" \
-   --build-env="ALLOWED_HOSTS=['127.0.0.1','localhost','*']" \
-   --build-env="DATABASE_URL=postgres://test_k8s:OwOtBep9Frut@192.168.0.246:5432/test_k8s"
+   --build-env="SECRET_KEY=<YOUR-SECRET-KEY>" \
+   --build-env="ALLOWED_HOSTS=<YOUR-ALLOWED-HOSTS>" \
+   --build-env="DATABASE_URL=postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
 ``` 
+, где `DB-USER`, `DB-PASSWORD`, `YOUR-HOST-IP`, `DB-PORT`, `DB-NAME` — ваши настройки для подключения к базе данных, 
+`YOUR-ALLOWED-HOSTS` — список разрешённых адресов, `YOUR-SECRET-KEY` — ваш секретный ключ Django.
 - `minikube image rm <Image ID>` -- удаляет образ с указанным ID
 - `minikube image prune -a` -- удаляет все неиспользуемые образы в кластере Minikube
 
@@ -114,7 +116,7 @@ minikube image build -t django_app . -f ./Dockerfile \
 kubectl run django \
 --image=django_app:latest \
 --image-pull-policy=IfNotPresent \
---env="DATABASE_URL=postgres://test_k8s:OwOtBep9Frut@192.168.0.246:5431/test_k8s"
+--env="DATABASE_URL=postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
 ```
 `kubectl exec django -ti -- bash` -- вход в терминал POD django
 
@@ -125,7 +127,7 @@ docker-compose -f docker-compose.override.yml up -d
 ```
 - ввести вручную настройки для подключения к базе данных:
 ```bash
-export DATABASE_URL="postgres://test_k8s:OwOtBep9Frut@<HOST IP>:5431/test_k8s"
+export DATABASE_URL="postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
 ```
 - провести миграцию, создать суперпользователя и/или проверить соединение с БД:
 ```
@@ -154,9 +156,11 @@ kubectl get pod django -o yaml > ./kubernetes/pod.yaml
 ```
 
 ### Развертывание 
-- поместите в файл deployment.yaml инструкции для создания Deployment, Service, Pod, разделив их между собой пустой строкой и символами "--".
+- поместите в файл deployment.yaml инструкции для создания Deployment, Service, Pod, 
+разделив их между собой пустой строкой и символами "--".
 - запускаем создание объектов из файла deployment.yaml
 ```bash
 kubectl apply -f ./kubernetes/deployment.yaml
 ```
-- при необходимости - меняем настройки и повторно запускаем создание объектов из файла deployment.yaml
+- при необходимости - меняем настройки внутри файла `deployment.yaml` и 
+повторно запускаем создание объектов из него.
