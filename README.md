@@ -215,3 +215,49 @@ kubectl apply -f ./kubernetes/Secret.yaml
           key: debug  
 ```
 
+- Удалить секрет:
+```bash
+kubectl delete -n default secret <secret-name>
+```
+
+#### Настройка Ingress
+- проверяем подключения: *`minikube addons list`*
+- активируем дополнение: *`minikube addons enable ingress`*
+- проверяем: *`k get pods -n ingress-nginx`*
+
+Пример вывода:
+```bash
+NAME                            READY   STATUS    RESTARTS   AGE
+ingress-nginx-controller        1/1     Running   0          1m
+ingress-nginx-default-backend   1/1     Running   0          1m
+```
+- настройте *`hosts`* согласно [инструкции](https://help.reg.ru/support/dns-servery-i-nastroyka-zony/rabota-s-dns-serverami/fayl-hosts-gde-nakhoditsya-i-kak-yego-izmenit)
+- добавим раздел про Ingress в файл *`deployment.yaml`*:
+```bash
+--
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: django-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: star-burger.test
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: django-svc
+            port:
+              number: 80
+```
+, где *`django-ingress`* - имя Ingress, *`django-svc`* - имя сервиса, *`80`* - порт.
+
+- перезапустим сборку:
+```bash 
+kubectl apply -f ./kubernetes/deployment.yaml
+```
