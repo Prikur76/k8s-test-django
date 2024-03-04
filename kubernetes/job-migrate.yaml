@@ -7,6 +7,7 @@ metadata:
     tier: backend
   name: django-migrate
 spec:
+  ttlSecondsAfterFinished: 50
   template:
     spec:
       containers:
