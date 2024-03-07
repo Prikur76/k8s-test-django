@@ -293,18 +293,18 @@ helm repo update
 ```
 - установите БД postgresql в кластере Minikube с параметрами:
 ```bash
-helm install dev-pg bitnami/postgresql ^  
-  --set global.postgresql.auth.postgresPassword=<YOUR-POSTGRES-PASSWORD> ^
-  --set global.postgresql.auth.username=test_k8s ^
-  --set global.postgresql.auth.password=OwOtBep9Frut ^
-  --set global.postgresql.auth.database=test_k8s ^
+helm install dev-pg bitnami/postgresql \  
+  --set global.postgresql.auth.postgresPassword=<YOUR-POSTGRES-PASSWORD> \
+  --set global.postgresql.auth.username=test_k8s \
+  --set global.postgresql.auth.password=OwOtBep9Frut \
+  --set global.postgresql.auth.database=test_k8s \
   --set global.postgresql.service.ports.postgresql=5432
 ```
 - для доступа к созданной БД:
 ```bash
-kubectl run dev-pg-postgresql-client --rm --tty -i --restart=Never ^
-  --namespace default ^
-  --image docker.io/bitnami/postgresql:16.2.0-debian-12-r5  --env="PGPASSWORD=<YOUR-POSTGRES-PASSWORD>" ^
+kubectl run dev-pg-postgresql-client --rm --tty -i --restart=Never \
+  --namespace default \
+  --image docker.io/bitnami/postgresql:16.2.0-debian-12-r5  --env="PGPASSWORD=<YOUR-POSTGRES-PASSWORD>" \
   --command -- psql --host dev-pg-postgresql -U test_k8s -d test_k8s -p 5432
 ```
 
@@ -312,4 +312,4 @@ kubectl run dev-pg-postgresql-client --rm --tty -i --restart=Never ^
 ```bash
 stringData:
   database_url: "postgres://test_k8s:OwOtBep9Frut@dev-pg-postgresql:5432/test_k8s"
-...
+```
