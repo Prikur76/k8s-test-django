@@ -76,37 +76,38 @@ $ docker compose build web
 `DATABASE_URL` -- адрес для подключения к базе данных PostgreSQL. Другие СУБД сайт не поддерживает. [Формат записи](https://github.com/jacobian/dj-database-url#url-schema).
 
 
-## Работа с локальным K8s кластером
+## Работа с локальным k8s кластером (VirtualBox, Windows, Minikube)
 
-### Для начала:
-- скачать [VirtualBox](https://www.virtualbox.org/wiki/Downloads), [kubectl.exe](https://dl.k8s.io/release/v1.29.2/bin/windows/amd64/kubectl.exe), [minikube.exe](https://github.com/kubernetes/minikube/releases)
-- создать директорию Kubernetes, добавить ее в Path переменных окружения Windows (если работаете в среде Windows)
-- перенести файлы kubectl.exe, minikube.exe в директорию Kubernetes
-- запустить кластер Minikube
+### Подготовка кластера Minikube:
+- создать директорию Kubernetes, добавить ее в Path переменных окружения Windows (если работаете в среде Windows);
+- скачать и установить [VirtualBox](https://www.virtualbox.org/wiki/Downloads);
+- скачать [kubectl.exe](https://dl.k8s.io/release/v1.29.2/bin/windows/amd64/kubectl.exe), [minikube.exe](https://github.com/kubernetes/minikube/releases), [helm.exe](https://get.helm.sh/helm-v3.8.1-windows-amd64.zip) и перенести их в директорию Kubernetes;
+- запустить кластер Minikube;
 
 ### Команды для работы с кластером Minikube
+- `kubectl version` -- выводит версию kubectl 
 - `minikube version` -- выводит версию Minikube
-- `kubectl version` -- выводит версию kubectl
-
-- запускает кластер Minikube c драйвером Virtualbox:
-```bash 
-minikube start --driver=virtualbox --no-vtx-check=true
-``` 
+- `minikube start` -- запускает кластер Minikube
 - `minikube stop` -- останавливает кластер Minikube
 - `minikube delete` -- удаляет кластер Minikube
 - `minikube ip` -- выводит IP адрес кластера Minikube
 - `minikube dashboard --url` -- запускает дашборд кластера Minikube и выводит URL 
 - `minikube image ls --format=table` -- выводит список образов в кластере Minikube в табличном виде
 
+### Запускаем кластер Minikube c драйвером Virtualbox:
+```bash 
+minikube start --driver=virtualbox --no-vtx-check=true && minikube dashboard --url
+``` 
+
 ### Команды для сборки образа с переменными окружения
-- собирает образ из Dockerfile, с переменными окружения:
+- собираем образ из Dockerfile, с переменными окружения:
 ```bash
 minikube image build -t django_app . -f ./Dockerfile \
    --build-env="SECRET_KEY=<YOUR-SECRET-KEY>" \
    --build-env="ALLOWED_HOSTS=<YOUR-ALLOWED-HOSTS>" \
-   --build-env="DATABASE_URL=postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
+   --build-env="DATABASE_URL=postgres://<DB-USER>:<DB-PASSWORD>@<DB-HOST-IP>:<DB-PORT>/<DB-NAME>"
 ``` 
-, где `DB-USER`, `DB-PASSWORD`, `YOUR-HOST-IP`, `DB-PORT`, `DB-NAME` — ваши настройки для подключения к базе данных, 
+, где `DB-USER`, `DB-PASSWORD`, `DB-HOST-IP`, `DB-PORT`, `DB-NAME` — ваши настройки для подключения к базе данных, 
 `YOUR-ALLOWED-HOSTS` — список разрешённых адресов, `YOUR-SECRET-KEY` — ваш секретный ключ Django.
 - `minikube image rm <Image ID>` -- удаляет образ с указанным ID
 - `minikube image prune -a` -- удаляет все неиспользуемые образы в кластере Minikube
@@ -120,29 +121,6 @@ kubectl run django \
 ```
 `kubectl exec django -ti -- bash` -- вход в терминал POD django
 
-### Подключение к БД PostgreSQL
-- запуск БД Postgres в отдельном контейнере, перед которым проверьте включение Docker Desktop:
-```bash
-docker-compose -f docker-compose.override.yml up -d
-```
-- ввести вручную настройки для подключения к базе данных:
-```bash
-export DATABASE_URL="postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
-```
-- провести миграцию, создать суперпользователя и/или проверить соединение с БД:
-```
-./manage.py migrate
-
-./manage.py createsuperuser
-
-./manage.py shell
-
->>> from django.contrib.auth.models import User
->>> User.objects.all()
-```
-Пример вывода:
-```<QuerySet [<User: admin>]>```
-
 ### Создание объектов из Манифестов
 - команда для создания объекта из Манифеста: ```kubectl apply -f <path-to-manifest>```
 
@@ -150,15 +128,15 @@ export DATABASE_URL="postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>
 ```bash
 kubectl apply -f ./kubernetes/pod.yaml
 ```
-- Для сохранения объекта (POD, Service, Deployment) в файл Манифеста используйте команду: 
+- для сохранения настроек объекта (pod/service/deployment) в файл Манифеста используйте команду:
 ```bash
-kubectl get pod django -o yaml > ./kubernetes/pod.yaml
+kubectl get pod <pod-name> -o yaml > ./kubernetes/pod.yaml
 ```
 
 ### Развертывание 
 #### Общие инструкции для развертывания
-- поместите в файл deployment.yaml инструкции для создания Deployment, Service, Pod, 
-разделив их между собой пустой строкой и символами "--".
+- поместите в файл deployment.yaml инструкции для создания Deployment, Service, Ingress - разделив инструкции 
+между собой пустой строкой и символами "--".
 - запускаем создание объектов из файла deployment.yaml
 ```bash
 kubectl apply -f ./kubernetes/deployment.yaml
@@ -166,9 +144,9 @@ kubectl apply -f ./kubernetes/deployment.yaml
 - при необходимости - меняем настройки внутри файла `deployment.yaml` и 
 повторно запускаем создание объектов из него.
 
+
 #### Использование секретов для переменных окружения
-- Создание файла вручную:
-1. создайте секрет с помощью команды:
+1. Создание файла вручную с помощью команды:
 ```bash
 kubectl create secret generic django-secret \
   --from-literal=secret_key=<YOUR-SECRET-KEY> \
@@ -176,15 +154,13 @@ kubectl create secret generic django-secret \
   --from-literal=debug=<DEBUG> \
   --from-literal=database_url=postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>
 ```
-
-2. сохраните секрет в файл Secret.yaml
+Полученный секрет сохраните в файл Secret.yaml
 ```bash
 kubectl get secret django-secret -o yaml > ./kubernetes/Secret.yaml
 ```
 Пример файла Secret.yaml приведен [тут](./kubernetes/Secret.example.yaml)
 
-- Создание секрета из файла:
-1. создайте манифест Secret.yaml и заполните его данными:
+2. Для создания секрета из файла создайте манифест Secret.yaml и заполните его, например:
 ```bash
 apiVersion: v1
 kind: Secret
@@ -198,11 +174,11 @@ stringData:
   debug: "<DEBUG>"
   database_url: "postgres://<DB-USER>:<DB-PASSWORD>@<YOUR-HOST-IP>:<DB-PORT>/<DB-NAME>"
 ```
-2. запустите создание секрета с помощью команды:
+После этого запустите создание секрета в кластере с помощью команды:
 ```bash
 kubectl apply -f ./kubernetes/Secret.yaml
 ```
-3. добавьте Secret.yaml в `.gitignore`
+3. Не забудьте добавить Secret.yaml в `.gitignore`.
 4. В раздел `.spec.template.spec.containers.env` файла deployment.yaml вместо переменных окружения укажите ссылку на секрет. 
 Например:
 ```bash
@@ -213,8 +189,7 @@ kubectl apply -f ./kubernetes/Secret.yaml
           name: secret-stringdata
           key: debug  
 ```
-
-- Удалить секрет:
+5. Для удаления секрета используйте команду:
 ```bash
 kubectl delete -n default secret <secret-name>
 ```
@@ -230,8 +205,8 @@ NAME                            READY   STATUS    RESTARTS   AGE
 ingress-nginx-controller        1/1     Running   0          1m
 ingress-nginx-default-backend   1/1     Running   0          1m
 ```
-- настройте *`hosts`* согласно [инструкции](https://help.reg.ru/support/dns-servery-i-nastroyka-zony/rabota-s-dns-serverami/fayl-hosts-gde-nakhoditsya-i-kak-yego-izmenit)
-- добавим раздел про Ingress в файл *`deployment.yaml`*:
+- настройте *`hosts`* согласно [инструкции](https://help.reg.ru/support/dns-servery-i-nastroyka-zony/rabota-s-dns-serverami/fayl-hosts-gde-nakhoditsya-i-kak-yego-izmenit).
+- добавим в файл *`deployment.yaml`* инструкции по настройке Ingress :
 ```bash
 --
 apiVersion: networking.k8s.io/v1
@@ -284,3 +259,57 @@ kubectl apply -f ./kubernetes/job-migrate.yaml
 ```bash
 kubectl get logs <pod-name>
 ```
+
+### Подключение к БД PostgreSQL
+
+#### 1. C помощью Docker Compose
+- запуск БД Postgres в отдельном контейнере, перед которым проверьте включение Docker Desktop:
+```bash
+docker-compose -f docker-compose.override.yml up -d
+```
+- ввести вручную настройки для подключения к базе данных:
+```bash
+export DATABASE_URL="postgres://<DB-USER>:<DB-PASSWORD>@<DB-HOST-IP>:<DB-PORT>/<DB-NAME>"
+```
+- провести миграцию, создать суперпользователя и/или проверить соединение с БД:
+```
+./manage.py migrate
+
+./manage.py createsuperuser
+
+./manage.py shell
+
+>>> from django.contrib.auth.models import User
+>>> User.objects.all()
+```
+Пример вывода:
+```<QuerySet [<User: admin>]>```
+
+#### 2. C помощью Minikube и [Helm](https://helm.sh/)
+- добавить хранилище helm `postgresql` в кластер Minikube:
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+```
+- установите БД postgresql в кластере Minikube с параметрами:
+```bash
+helm install dev-pg bitnami/postgresql ^  
+  --set global.postgresql.auth.postgresPassword=<YOUR-POSTGRES-PASSWORD> ^
+  --set global.postgresql.auth.username=test_k8s ^
+  --set global.postgresql.auth.password=OwOtBep9Frut ^
+  --set global.postgresql.auth.database=test_k8s ^
+  --set global.postgresql.service.ports.postgresql=5432
+```
+- для доступа к созданной БД:
+```bash
+kubectl run dev-pg-postgresql-client --rm --tty -i --restart=Never ^
+  --namespace default ^
+  --image docker.io/bitnami/postgresql:16.2.0-debian-12-r5  --env="PGPASSWORD=<YOUR-POSTGRES-PASSWORD>" ^
+  --command -- psql --host dev-pg-postgresql -U test_k8s -d test_k8s -p 5432
+```
+
+Чтобы иметь к данной БД доступ в проекте джанго, необходимо в файле Secret.yaml прописать:
+```bash
+stringData:
+  database_url: "postgres://test_k8s:OwOtBep9Frut@dev-pg-postgresql:5432/test_k8s"
+...
