@@ -313,3 +313,9 @@ kubectl run dev-pg-postgresql-client --rm --tty -i --restart=Never \
 stringData:
   database_url: "postgres://test_k8s:OwOtBep9Frut@dev-pg-postgresql:5432/test_k8s"
 ```
+
+### Цель проекта
+Код написан в образовательных целях на онлайн-курсе для веб-разработчиков [dvmn.org](https://dvmn.org).
+
+### Лицензия
+Этот проект лицензирован по лицензии MIT - подробности см. в файле [ЛИЦЕНЗИЯ](LICENSE).
